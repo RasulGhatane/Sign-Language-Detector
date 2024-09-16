@@ -12,10 +12,8 @@ import re
 from sklearn.preprocessing import StandardScaler
 import logging
 
-# Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# GPU configuration
 gpus = tf.config.experimental.list_physical_devices('GPU')
 if gpus:
     try:
@@ -29,11 +27,9 @@ else:
 
 logging.info(f"Num GPUs Available: {len(tf.config.list_physical_devices('GPU'))}")
 
-# MediaPipe setup
 mp_holistic = mp.solutions.holistic
 mp_drawing = mp.solutions.drawing_utils
 
-# Constants
 DATA_PATH = os.path.join('MP_Data')
 NO_SEQUENCES = 30
 SEQUENCE_LENGTH = 30
@@ -142,15 +138,12 @@ def load_data():
     return np.array(sequences), np.array(labels)
 
 def preprocess_data(sequences, labels):
-    # Reshape the data
     n_sequences, n_steps, n_features = sequences.shape
     sequences_reshaped = sequences.reshape(n_sequences * n_steps, n_features)
-    
-    # Normalize the data
+
     scaler = StandardScaler()
     sequences_normalized = scaler.fit_transform(sequences_reshaped)
-    
-    # Reshape back to 3D
+
     sequences_normalized = sequences_normalized.reshape(n_sequences, n_steps, n_features)
     
     return sequences_normalized, labels
@@ -178,25 +171,20 @@ def create_model(input_shape, num_classes):
 
 def train_model():
     try:
-        # Load and preprocess data
         sequences, labels = load_data()
         sequences_normalized, labels = preprocess_data(sequences, labels)
-        
-        # Split data
+
         X_train, X_test, y_train, y_test = train_test_split(sequences_normalized, labels, test_size=0.2, random_state=42)
-        
-        # Create model
+
         input_shape = (SEQUENCE_LENGTH, sequences.shape[2])
         num_classes = len(np.unique(labels))
         model = create_model(input_shape, num_classes)
-        
-        # Set up callbacks
+
         log_dir = os.path.join('Logs', datetime.now().strftime("%Y%m%d-%H%M%S"))
         tensorboard_callback = TensorBoard(log_dir=log_dir, histogram_freq=1)
         early_stopping = EarlyStopping(monitor='val_loss', patience=20, restore_best_weights=True)
         reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=10, min_lr=1e-6)
-        
-        # Train model
+
         history = model.fit(
             X_train, y_train,
             epochs=500,
@@ -204,12 +192,10 @@ def train_model():
             validation_data=(X_test, y_test),
             callbacks=[tensorboard_callback, early_stopping, reduce_lr]
         )
-        
-        # Evaluate model
+
         test_loss, test_acc = model.evaluate(X_test, y_test)
         logging.info(f"Test accuracy: {test_acc}")
-        
-        # Save model
+
         model.save('sign_language_model.h5')
         logging.info("Model saved as 'sign_language_model.h5'")
     except Exception as e:

@@ -9,14 +9,11 @@ import logging
 from tensorflow.keras.layers import Input, Dense
 from tensorflow.keras.models import Model
 
-# Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# MediaPipe initialization
 mp_holistic = mp.solutions.holistic
 mp_drawing = mp.solutions.drawing_utils
 
-# Constants
 MODEL_PATH = 'sign_language_model.h5'
 DATA_PATH = r'C:\Users\rasul\Documents\Python\Sign-Language_Detector\MP_Data'
 SEQUENCE_LENGTH = 30
@@ -50,7 +47,7 @@ def load_actions(data_path):
     return np.array(actions)
 
 def verify_model_actions_compatibility(model, actions):
-    sample_input = np.zeros((1, SEQUENCE_LENGTH, 1662))  # Adjust 1662 if your input shape is different
+    sample_input = np.zeros((1, SEQUENCE_LENGTH, 1662)) 
     model_output = model.predict(sample_input)
     if model_output.shape[1] != len(actions):
         logging.warning(f"Model output shape ({model_output.shape[1]}) does not match the number of actions ({len(actions)})")
@@ -60,21 +57,15 @@ def verify_model_actions_compatibility(model, actions):
     return model
 
 def adjust_model(model, num_actions):
-    # Define a new input layer with the same shape as the original input
-    new_input = Input(shape=model.input_shape[1:])  # Exclude the batch size
-
-    # Build the new model from the original layers up to the last Dense layer
+    new_input = Input(shape=model.input_shape[1:]) 
     x = new_input
     for layer in model.layers[:-1]:
         x = layer(x)
-    
-    # Add the new Dense output layer
+
     new_output = Dense(num_actions, activation='softmax')(x)
-    
-    # Create the new model
+
     new_model = Model(inputs=new_input, outputs=new_output)
-    
-    # Compile the new model with the same optimizer, loss, and metrics as the original
+
     new_model.compile(optimizer=model.optimizer, loss=model.loss, metrics=model.metrics)
     
     logging.info(f"Model adjusted to output {num_actions} actions.")
@@ -144,8 +135,7 @@ def main():
     colors = colors[:len(actions)]
 
     cap = cv2.VideoCapture(0)
-    
-    # Set camera properties for higher resolution
+
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
     
